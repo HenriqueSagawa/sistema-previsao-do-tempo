@@ -7,6 +7,8 @@ const weatherInfo = document.getElementById('weatherInfo');
 const forecastInfo = document.getElementById('forecastInfo');
 const searchHistoryContainer = document.getElementById('searchHistory');
 
+let isCelsius = true;
+
 searchButton.addEventListener('click', buscarClima);
 cityInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -15,6 +17,10 @@ cityInput.addEventListener('keypress', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', carregarHistorico);
+
+function celsiusToFahrenheit(celsius) {
+    return ((celsius * 9/5) + 32).toFixed(1);
+}
 
 async function buscarClima() {
     const cidade = cityInput.value.trim();
@@ -48,15 +54,23 @@ async function buscarClima() {
 }
 
 function renderizarClima(dadosAtual, dadosPrevisao) {
-    const temperatura = dadosAtual.main.temp.toFixed(1);
+    const temperatura = isCelsius 
+        ? dadosAtual.main.temp.toFixed(1) 
+        : celsiusToFahrenheit(dadosAtual.main.temp);
     const descricao = dadosAtual.weather[0].description;
     const icone = dadosAtual.weather[0].icon;
     const umidade = dadosAtual.main.humidity;
     const velocidadeVento = dadosAtual.wind.speed.toFixed(1);
-    const sensacaoTermica = dadosAtual.main.feels_like.toFixed(1);
+    const sensacaoTermica = isCelsius 
+        ? dadosAtual.main.feels_like.toFixed(1) 
+        : celsiusToFahrenheit(dadosAtual.main.feels_like);
     const pressao = dadosAtual.main.pressure;
-    const tempMinima = dadosAtual.main.temp_min.toFixed(1);
-    const tempMaxima = dadosAtual.main.temp_max.toFixed(1);
+    const tempMinima = isCelsius 
+        ? dadosAtual.main.temp_min.toFixed(1) 
+        : celsiusToFahrenheit(dadosAtual.main.temp_min);
+    const tempMaxima = isCelsius 
+        ? dadosAtual.main.temp_max.toFixed(1) 
+        : celsiusToFahrenheit(dadosAtual.main.temp_max);
 
     weatherInfo.innerHTML = `
         <div class="text-center">
@@ -66,7 +80,12 @@ function renderizarClima(dadosAtual, dadosPrevisao) {
                 class="mx-auto w-40 h-40 filter drop-shadow-lg"
             >
             <h2 class="text-3xl font-bold text-cyan-400">${dadosAtual.name}, ${dadosAtual.sys.country}</h2>
-            <p class="text-5xl font-bold text-white mt-2">${temperatura}°C</p>
+            <p 
+                id="temperatureDisplay" 
+                class="text-5xl font-bold text-white mt-2 cursor-pointer hover:text-gray-400 transition-all"
+            >
+                ${temperatura}°${isCelsius ? 'C' : 'F'}
+            </p>
             <p class="text-xl text-gray-300 capitalize">${descricao}</p>
         </div>
 
@@ -75,7 +94,7 @@ function renderizarClima(dadosAtual, dadosPrevisao) {
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-cyan-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m3.343-5.657l-.707-.707m12.728 12.728l.707.707" />
                 </svg>
-                <p class="text-gray-300">Sensação: ${sensacaoTermica}°C</p>
+                <p class="text-gray-300">Sensação: ${sensacaoTermica}°${isCelsius ? 'C' : 'F'}</p>
             </div>
             <div class="bg-gray-700 rounded-xl p-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-cyan-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,7 +126,9 @@ function renderizarClima(dadosAtual, dadosPrevisao) {
     forecastInfo.innerHTML = previsoesFiltradas.slice(0, 3).map((previsao) => {
         const data = new Date(previsao.dt * 1000);
         const diaSemana = diasSemana[data.getDay()];
-        const tempMedia = previsao.main.temp.toFixed(1);
+        const tempMedia = isCelsius 
+            ? previsao.main.temp.toFixed(1) 
+            : celsiusToFahrenheit(previsao.main.temp);
         const iconePrevisao = previsao.weather[0].icon;
 
         return `
@@ -118,10 +139,16 @@ function renderizarClima(dadosAtual, dadosPrevisao) {
                     alt="Ícone do clima" 
                     class="mx-auto w-20 h-20 filter drop-shadow-md"
                 >
-                <p class="text-white text-lg">${tempMedia}°C</p>
+                <p class="text-white text-lg">${tempMedia}°${isCelsius ? 'C' : 'F'}</p>
             </div>
         `;
     }).join('');
+
+    // Add click event listener to toggle temperature
+    document.getElementById('temperatureDisplay').addEventListener('click', () => {
+        isCelsius = !isCelsius;
+        renderizarClima(dadosAtual, dadosPrevisao);
+    });
 }
 
 function salvarHistorico(dadosAtual, dadosPrevisao) {
